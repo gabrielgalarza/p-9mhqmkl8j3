@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>OTT Sponsor Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky header with owner filter + three tabs; each view leads with summary tiles, then detail. */
+:root{
+  --bg:#f5f5f2; --surface:#ffffff; --sunken:#ecece6; --line:#dcdcd3;
+  --fg:#1b1d24; --muted:#636672; --faint:#9396a0;
+  --accent:#8a5a14; --accent-soft:#f3e7d1; --ink:#23304f;
+  --good:#1f7a4c; --good-soft:#dcf0e4; --warn:#9a6a00; --warn-soft:#f7ecc9; --bad:#b0392f; --bad-soft:#f6dcd8;
+  --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#14161b; --surface:#1c1f26; --sunken:#23262f; --line:#30343f;
+  --fg:#eceae4; --muted:#a3a5ad; --faint:#737682;
+  --accent:#e0b566; --accent-soft:#3a2f1c; --ink:#aebde0;
+  --good:#6fd29b; --good-soft:#1b3326; --warn:#e6c25a; --warn-soft:#3a321a; --bad:#f08a7f; --bad-soft:#3d2220;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#14161b; --surface:#1c1f26; --sunken:#23262f; --line:#30343f;
+  --fg:#eceae4; --muted:#a3a5ad; --faint:#737682;
+  --accent:#e0b566; --accent-soft:#3a2f1c; --ink:#aebde0;
+  --good:#6fd29b; --good-soft:#1b3326; --warn:#e6c25a; --warn-soft:#3a321a; --bad:#f08a7f; --bad-soft:#3d2220;
+  color-scheme:dark}
+*{box-sizing:border-box}
+html{color-scheme:light}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:1200px;margin:0 auto}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:18px 0;border-bottom:1px solid var(--line)}
+.top{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between}
+h1{font:700 26px/1.1 var(--display);margin:0;letter-spacing:-.01em;text-wrap:balance}
+h1 small{display:block;font:500 11px/1.4 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+label.ctl{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+select,input[type=date],input[type=number]{font:inherit;font-size:14px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;text-transform:none;letter-spacing:0}
+button{font:inherit;cursor:pointer}
+.btn{font-size:13px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:6px 12px}
+.btn:hover{border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.fresh{font:12px var(--mono);color:var(--faint)}
+nav{display:flex;gap:4px;margin-top:14px;overflow-x:auto}
+nav button{border:0;background:none;color:var(--muted);padding:10px 14px;font-weight:500;font-size:14px;border-bottom:2px solid transparent;white-space:nowrap}
+nav button[aria-selected=true]{color:var(--fg);border-bottom-color:var(--accent)}
+section.view{padding-top:24px;display:grid;gap:24px}
+h2{font:600 18px/1.2 var(--display);margin:0 0 4px}
+.sub{color:var(--muted);font-size:13px;margin:0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:grid;gap:4px;align-content:start}
+.tile .lab{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.tile .val{font:600 30px/1.1 var(--display);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.tile .note{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tile.hero{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.tile.hero .lab,.tile.hero .note{color:color-mix(in srgb,var(--bg) 75%,var(--ink))}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:4px 11px;font-size:13px}
+.chip[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--fg)}
+/* monthly bars */
+.months{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;align-items:end;height:170px;margin-top:14px;border-bottom:1px solid var(--line)}
+.mcol{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:4px;min-width:0}
+.mbar{width:100%;max-width:34px;background:var(--line);border-radius:4px 4px 0 0;min-height:1px}
+.mcol.q .mbar{background:var(--accent)}
+.mval{font:10px var(--mono);color:var(--muted);white-space:nowrap}
+.mlabels{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;margin-top:6px}
+.mlabels span{font:11px var(--mono);color:var(--faint);text-align:center}
+.mlabels span.q{color:var(--accent);font-weight:500}
+/* stage bars */
+.sbars{display:grid;gap:10px;margin-top:14px}
+.srow{display:grid;grid-template-columns:minmax(120px,170px) 1fr auto;gap:12px;align-items:center;font-size:13px;border:0;background:none;color:var(--fg);text-align:left;padding:2px 0;border-radius:6px}
+.srow[aria-pressed=false]{opacity:.4}
+.strack{height:14px;background:var(--sunken);border-radius:4px;overflow:hidden;position:relative}
+.sfill{position:absolute;inset:0 auto 0 0;background:var(--ink);border-radius:4px}
+.sweight{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:4px}
+.snum{font:12px var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);text-align:right;white-space:nowrap}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+/* board */
+.boardwrap{overflow-x:auto;padding-bottom:6px}
+.board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(230px,1fr);gap:12px;min-width:min-content}
+.col{background:var(--sunken);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px;min-width:230px}
+.colhead{display:grid;gap:2px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.colhead b{font:600 14px var(--display)}
+.colhead span{font:12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.card{display:grid;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-decoration:none;color:inherit}
+.card:hover{border-color:var(--accent)}
+.card .dn{font-size:13px;font-weight:500;line-height:1.35;overflow-wrap:anywhere}
+.card .meta{display:flex;justify-content:space-between;gap:8px;font:12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.card .amt{color:var(--fg);font-weight:500}
+.late{color:var(--bad)}
+.empty{font-size:13px;color:var(--faint);padding:8px 2px}
+.pill{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.na{background:var(--sunken);color:var(--muted)}
+/* funnel */
+.funnel{display:grid;gap:14px;margin-top:14px}
+.fstep{display:grid;grid-template-columns:minmax(150px,210px) 1fr;gap:6px 16px;align-items:center}
+.fname{font-size:14px;font-weight:500}
+.fname small{display:block;font:12px var(--mono);color:var(--muted);font-weight:400}
+.fviz{display:grid;gap:5px;min-width:0}
+.fline{display:grid;grid-template-columns:62px 1fr 56px;gap:8px;align-items:center;font:12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.ftrack{height:12px;background:var(--sunken);border-radius:3px;position:relative;overflow:hidden}
+.ftrack .you{position:absolute;inset:0 auto 0 0;background:var(--ink);border-radius:3px}
+.ftrack .tgt{position:absolute;inset:0 auto 0 0;background:var(--accent);opacity:.55;border-radius:3px}
+.ftrack .band{position:absolute;top:0;bottom:0;background:var(--accent);opacity:.3}
+.fverdict{grid-column:2;display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.n{text-align:right;font-family:var(--mono)}
+.tblwrap{overflow-x:auto}
+.cad{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:14px}
+.day{border:1px solid var(--line);border-radius:8px;padding:8px 6px;text-align:center;display:grid;gap:2px;min-width:0}
+.day .d{font:11px var(--mono);color:var(--faint)}
+.day .t{font-size:11px;color:var(--muted)}
+.day .c{font:600 20px var(--display);font-variant-numeric:tabular-nums}
+.day.call{background:var(--accent-soft);border-color:transparent}
+ul.rules{margin:10px 0 0;padding-left:18px;display:grid;gap:6px;font-size:13px;color:var(--muted)}
+ul.rules b{color:var(--fg);font-weight:500}
+.plan{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
+.plan div{display:grid;gap:2px}
+.plan .big{font:600 26px var(--display);font-variant-numeric:tabular-nums}
+.plan .lab{font-size:12px;color:var(--muted)}
+.banner{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:16px 18px;display:grid;gap:6px}
+.banner.err{border-color:var(--bad);background:var(--bad-soft)}
+.banner b{font-family:var(--display);font-size:16px}
+.skel{height:14px;border-radius:4px;background:var(--sunken);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.5}}
+@media (prefers-reduced-motion: reduce){.skel{animation:none}}
+@media (max-width:560px){
+  .fstep{grid-template-columns:1fr}.fverdict{grid-column:1}
+  .srow{grid-template-columns:100px 1fr auto}
+  .cad{grid-template-columns:repeat(4,1fr)}
+  .months .mval{display:none}
+}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+<header>
+  <div class="top">
+    <h1><small>Over The Top · Sponsorship</small>Sponsor Pipeline</h1>
+    <div class="controls">
+      <label class="ctl" for="owner">Owner
+        <select id="owner">
+          <option value="all">Everyone</option>
+          <option value="gab">Gabriel + shared</option>
+          <option value="162912451">Gabriel</option>
+          <option value="162912593">Kyle</option>
+          <option value="89384081">OTT shared</option>
+        </select>
+      </label>
+      <button class="btn" id="refresh" type="button">Reload</button>
+      <span class="fresh" id="fresh">Loading…</span>
+    </div>
+  </div>
+  <nav role="tablist">
+    <button role="tab" data-tab="overview" aria-selected="true">Tracker</button>
+    <button role="tab" data-tab="pipeline" aria-selected="false">Deal pipeline</button>
+    <button role="tab" data-tab="prospecting" aria-selected="false">Prospecting</button>
+  </nav>
+</header>
+
+<div id="status"></div>
+
+<!-- TRACKER -->
+<section class="view" id="v-overview">
+  <div class="top">
+    <div><h2>Closed and open sponsorship</h2><p class="sub">Closed won by close date. Open pipeline is every deal not yet won or lost.</p></div>
+    <label class="ctl" for="year">Year <select id="year"></select></label>
+  </div>
+  <div class="tiles" id="ov-tiles">
+    <div class="tile hero"><span class="lab">Closed won · year</span><div class="skel"></div></div>
+    <div class="tile"><span class="lab">Closed won · quarter</span><div class="skel"></div></div>
+    <div class="tile"><span class="lab">Open pipeline</span><div class="skel"></div></div>
+    <div class="tile"><span class="lab">Weighted pipeline</span><div class="skel"></div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h2>Closed won by month</h2>
+      <p class="sub" id="months-sub">Current quarter highlighted.</p>
+      <div class="months" id="months"></div>
+      <div class="mlabels" id="mlabels"></div>
+    </div>
+    <div class="panel">
+      <h2>Open pipeline by stage</h2>
+      <p class="sub">Tap a stage to include or exclude it from the pipeline totals.</p>
+      <div class="sbars" id="sbars"></div>
+      <div class="legend"><span><i style="background:var(--ink)"></i>Total value</span><span><i style="background:var(--accent)"></i>Weighted by stage probability</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section class="view" id="v-pipeline" hidden>
+  <div class="top">
+    <div><h2>Deals by stage</h2><p class="sub">Open deals, sorted by close date. Red dates are past due. Click a deal to open it in HubSpot.</p></div>
+    <label class="ctl" for="closedrange">Closed columns
+      <select id="closedrange">
+        <option value="quarter">This quarter</option>
+        <option value="year">This year</option>
+        <option value="none">Hide</option>
+      </select>
+    </label>
+  </div>
+  <div class="boardwrap"><div class="board" id="board"></div></div>
+</section>
+
+<!-- PROSPECTING -->
+<section class="view" id="v-prospecting" hidden>
+  <div class="top">
+    <div><h2>Prospecting vs. Sponsorship Collective benchmarks</h2><p class="sub">Contacts with a Prospect Status in HubSpot, measured by the OTT rule below.</p></div>
+    <label class="ctl" for="since">Added on or after <input type="date" id="since"></label>
+  </div>
+  <div class="tiles" id="pr-tiles"></div>
+  <div class="panel">
+    <h2>Funnel conversion</h2>
+    <p class="sub">Your rate against the benchmark. Stages with fewer than 5 contacts in the denominator are an early read.</p>
+    <div class="funnel" id="funnel"></div>
+    <div class="legend"><span><i style="background:var(--ink)"></i>OTT actual</span><span><i style="background:var(--accent);opacity:.55"></i>Benchmark</span></div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h2>In the 7-touch cadence</h2>
+      <p class="sub" id="cad-sub">Contact Made contacts by current outreach step.</p>
+      <div class="cad" id="cad"></div>
+    </div>
+    <div class="panel">
+      <h2>Prospects needed</h2>
+      <p class="sub">Baylis plans on ~900 prospects per 10 deals and says to plan for more.</p>
+      <label class="ctl" for="goal" style="margin-top:12px">Deals to close <input type="number" id="goal" min="1" max="200" value="10" style="width:80px"></label>
+      <div class="plan" id="plan"></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h2>Where prospects sit</h2>
+      <div class="tblwrap"><table id="stat-table"></table></div>
+    </div>
+    <div class="panel">
+      <h2>How we measure</h2>
+      <ul class="rules">
+        <li><b>Denominator</b> is contacts who finished the sequence and were Declined, plus everyone at Response Received or better.</li>
+        <li><b>Mid-sequence</b> contacts (Contact Made) are left out until they reply or finish.</li>
+        <li><b>Any human reply</b>, including redirects and "not interested", goes to Response Received before Declined.</li>
+        <li><b>Hard bounces</b> go straight to Declined. HubSpot doesn't flag them separately, so they count here unless removed.</li>
+        <li><b>Email health:</b> ~30% opens on the full cadence, 50–125 words, and the only ask is a 15-minute discovery call. Never cold-send a deck.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</div>
+
+<script>
+(() => {
+const OWNERS = {"162912451":"Gabriel","162912593":"Kyle","89384081":"OTT shared"};
+const OPEN_STAGES = [
+  ["appointmentscheduled","Appointment Scheduled"],["qualifiedtobuy","Qualified To Buy"],
+  ["presentationscheduled","Presentation Scheduled"],["decisionmakerboughtin","Decision Maker Bought-In"],
+  ["contractsent","Contract Sent"]];
+const STAGE_PROB = {appointmentscheduled:.2,qualifiedtobuy:.4,presentationscheduled:.6,decisionmakerboughtin:.8,contractsent:.9};
+const STATUSES = ["Contact Made","Response Received","Meeting Booked","Meeting Complete","Proposal Submitted","Approved","Declined"];
+const CADENCE = [["Day 1","Email"],["Day 2","Email"],["Day 3","Email"],["Day 4","Call"],["Day 5","Email"],["Day 6","Email"],["Day 7","Call"]];
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money = n => { n = n||0; const a = Math.abs(n);
+  return a >= 1e6 ? "$"+(n/1e6).toFixed(a>=1e7?0:1)+"M" : a >= 1e3 ? "$"+(n/1e3).toFixed(a>=1e5?0:1).replace(/\.0$/,"")+"K" : "$"+Math.round(n); };
+const moneyFull = n => "$" + Math.round(n||0).toLocaleString("en-US");
+const pct = (x, d=0) => x == null || !isFinite(x) ? "—" : (x*100).toFixed(d) + "%";
+const store = { get(k,d){ try{ return localStorage.getItem(k) ?? d }catch{ return d } }, set(k,v){ try{ localStorage.setItem(k,v) }catch{} } };
+
+const now = new Date(), YEAR = now.getFullYear(), QTR = Math.floor(now.getMonth()/3);
+let state = { deals:null, contacts:null, dealErr:null, contactErr:null, storedAt:null,
+  tab: (location.hash||"").slice(1) || store.get("ott.tab","overview"),
+  owner: store.get("ott.owner","all"), year: YEAR,
+  stages: new Set(OPEN_STAGES.map(s=>s[0])), closedRange: store.get("ott.closed","quarter"),
+  since: store.get("ott.since",""), goal: +store.get("ott.goal","10") || 10,
+  portalId:null };
+
+/* ---------- controls ---------- */
+$("#owner").value = state.owner;
+$("#closedrange").value = state.closedRange;
+$("#since").value = state.since;
+$("#goal").value = state.goal;
+function setTab(t){ if(!["overview","pipeline","prospecting"].includes(t)) t="overview"; state.tab=t; store.set("ott.tab",t);
+  document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===t));
+  ["overview","pipeline","prospecting"].forEach(v=> $("#v-"+v).hidden = v!==t); }
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+setTab(state.tab);
+$("#owner").addEventListener("change", e=>{ state.owner=e.target.value; store.set("ott.owner",state.owner); render(); });
+$("#year").addEventListener("change", e=>{ state.year=+e.target.value; render(); });
+$("#closedrange").addEventListener("change", e=>{ state.closedRange=e.target.value; store.set("ott.closed",state.closedRange); render(); });
+$("#since").addEventListener("change", e=>{ state.since=e.target.value; store.set("ott.since",state.since); render(); });
+$("#goal").addEventListener("input", e=>{ state.goal=Math.max(1,+e.target.value||1); store.set("ott.goal",state.goal); renderPlan(); });
+$("#refresh").addEventListener("click", ()=>load());
+
+const ownerOk = id => state.owner==="all" ? true
+  : state.owner==="gab" ? (id==="162912451"||id==="89384081") : id===state.owner;
+
+/* ---------- data ---------- */
+async function load(){
+  $("#fresh").textContent = "Loading…";
+  try {
+    const res = await fetch("data.json?t=" + Date.now(), {cache:"no-store"});
+    if (res.status === 404) { showStatus(["No data yet","The daily HubSpot sync hasn't run yet. In GitHub, open Actions → Sync HubSpot → Run workflow."], true); $("#fresh").textContent=""; return; }
+    if (!res.ok) throw new Error("The data file returned " + res.status + ".");
+    const d = await res.json();
+    state.deals = d.deals || []; state.contacts = d.contacts || [];
+    state.portalId = d.portalId; state.storedAt = Date.parse(d.generatedAt);
+    const ageH = (Date.now() - state.storedAt) / 36e5;
+    showStatus(ageH > 36 ? ["Data is out of date", `Last HubSpot sync was ${Math.floor(ageH/24)} day(s) ago. Check the Sync HubSpot workflow in GitHub Actions.`] : null, true);
+    $("#fresh").textContent = "HubSpot data as of " + new Date(state.storedAt).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
+    render();
+  } catch (e) {
+    showStatus(["Couldn't load the dashboard data", (e && e.message) || "Reload the page to try again."], true);
+    $("#fresh").textContent = "";
+  }
+}
+function showStatus(msg, isErr){
+  const el = $("#status");
+  el.innerHTML = msg ? `<div class="banner ${isErr?"err":""}" style="margin-top:20px"><b>${esc(msg[0])}</b><span>${esc(msg[1])}</span></div>` : "";
+}
+
+/* ---------- derived ---------- */
+function deals(){ return (state.deals||[]).map(r=>{ const p=r.properties||{};
+  const prob = p.hs_deal_stage_probability!=null && p.hs_deal_stage_probability!=="" ? +p.hs_deal_stage_probability : (STAGE_PROB[p.dealstage] ?? 0);
+  return {id:r.id, name:p.dealname||r.displayName||"Untitled deal", stage:p.dealstage, amount:+p.amount||0,
+    close:p.closedate?new Date(p.closedate):null, prob, owner:p.hubspot_owner_id||null}; })
+  .filter(d=>ownerOk(d.owner)); }
+function dealLink(id){ return state.portalId ? `https://app.hubspot.com/contacts/${state.portalId}/record/0-3/${id}` : "#"; }
+
+/* ---------- render ---------- */
+function render(){
+  if (state.deals){ renderYears(); renderOverview(); renderBoard(); }
+  if (state.contacts) renderProspecting();
+}
+function renderYears(){
+  const ys = new Set([YEAR]); deals().forEach(d=>{ if(d.stage==="closedwon"&&d.close) ys.add(d.close.getFullYear()); });
+  const sel=$("#year"), list=[...ys].sort((a,b)=>b-a);
+  sel.innerHTML = list.map(y=>`<option value="${y}">${y}</option>`).join(""); sel.value = state.year;
+}
+function renderOverview(){
+  const ds = deals(), y = state.year;
+  const won = ds.filter(d=>d.stage==="closedwon" && d.close && d.close.getFullYear()===y);
+  const lost = ds.filter(d=>d.stage==="closedlost" && d.close && d.close.getFullYear()===y);
+  const wonQ = won.filter(d=>Math.floor(d.close.getMonth()/3)===QTR && y===YEAR);
+  const sum = a => a.reduce((s,d)=>s+d.amount,0);
+  const open = ds.filter(d=>d.stage!=="closedwon" && d.stage!=="closedlost");
+  const openSel = open.filter(d=>state.stages.has(d.stage));
+  const wsum = openSel.reduce((s,d)=>s+d.amount*d.prob,0);
+  const winRate = won.length+lost.length ? won.length/(won.length+lost.length) : null;
+  const qName = `Q${QTR+1} ${YEAR}`;
+  const filtered = state.stages.size < OPEN_STAGES.length;
+  $("#ov-tiles").innerHTML = `
+    <div class="tile hero"><span class="lab">Closed won · ${y}</span><span class="val">${moneyFull(sum(won))}</span><span class="note">${won.length} deal${won.length===1?"":"s"} · ${pct(winRate)} win rate (${won.length} of ${won.length+lost.length} decided)</span></div>
+    <div class="tile"><span class="lab">Closed won · ${y===YEAR?qName:"current quarter"}</span><span class="val">${y===YEAR?moneyFull(sum(wonQ)):"—"}</span><span class="note">${y===YEAR?`${wonQ.length} deal${wonQ.length===1?"":"s"} closed this quarter`:`Pick ${YEAR} to see the current quarter`}</span></div>
+    <div class="tile"><span class="lab">Open pipeline${filtered?" · filtered":""}</span><span class="val">${moneyFull(sum(openSel))}</span><span class="note">${openSel.length} open deal${openSel.length===1?"":"s"}${filtered?` in ${state.stages.size} of ${OPEN_STAGES.length} stages`:" across all stages"}</span></div>
+    <div class="tile"><span class="lab">Weighted pipeline</span><span class="val">${moneyFull(wsum)}</span><span class="note">Value × HubSpot stage probability</span></div>`;
+  // months
+  const byM = Array(12).fill(0); won.forEach(d=>byM[d.close.getMonth()]+=d.amount);
+  const max = Math.max(...byM, 1);
+  const inQ = m => y===YEAR && Math.floor(m/3)===QTR;
+  $("#months").innerHTML = byM.map((v,m)=>`<div class="mcol ${inQ(m)?"q":""}" title="${moneyFull(v)}"><span class="mval">${v?money(v):""}</span><div class="mbar" style="height:${v?Math.max(2,v/max*100*0.82):0}%"></div></div>`).join("");
+  $("#mlabels").innerHTML = "JFMAMJJASOND".split("").map((l,m)=>`<span class="${inQ(m)?"q":""}">${l}</span>`).join("");
+  $("#months-sub").textContent = y===YEAR ? `${qName} highlighted.` : `All of ${y}.`;
+  // stage bars
+  const st = OPEN_STAGES.map(([k,l])=>{ const a=open.filter(d=>d.stage===k); return {k,l,n:a.length,v:sum(a),w:a.reduce((s,d)=>s+d.amount*d.prob,0)}; });
+  const smax = Math.max(...st.map(s=>s.v),1);
+  $("#sbars").innerHTML = st.map(s=>`<button type="button" class="srow" data-stage="${s.k}" aria-pressed="${state.stages.has(s.k)}">
+      <span>${esc(s.l)}</span>
+      <span class="strack"><span class="sfill" style="width:${s.v/smax*100}%"></span><span class="sweight" style="width:${s.w/smax*100}%"></span></span>
+      <span class="snum">${s.n} · ${money(s.v)}</span></button>`).join("");
+  $("#sbars").querySelectorAll(".srow").forEach(b=>b.addEventListener("click",()=>{
+    const k=b.dataset.stage; state.stages.has(k)?state.stages.delete(k):state.stages.add(k);
+    if(!state.stages.size) OPEN_STAGES.forEach(s=>state.stages.add(s[0]));
+    renderOverview(); }));
+}
+function renderBoard(){
+  const ds = deals(), today = new Date(); today.setHours(0,0,0,0);
+  const inRange = d => d.close && (state.closedRange==="year" ? d.close.getFullYear()===YEAR
+    : d.close.getFullYear()===YEAR && Math.floor(d.close.getMonth()/3)===QTR);
+  const cols = OPEN_STAGES.map(([k,l])=>({k,l,items:ds.filter(d=>d.stage===k)}));
+  if (state.closedRange!=="none"){
+    cols.push({k:"closedwon",l:"Closed Won",items:ds.filter(d=>d.stage==="closedwon"&&inRange(d))});
+    cols.push({k:"closedlost",l:"Closed Lost",items:ds.filter(d=>d.stage==="closedlost"&&inRange(d))});
+  }
+  const fmtD = d => d ? d.toLocaleDateString([], {month:"short",day:"numeric",year: d.getFullYear()!==YEAR?"2-digit":undefined}) : "No date";
+  $("#board").innerHTML = cols.map(c=>{
+    const open = !c.k.startsWith("closed");
+    c.items.sort((a,b)=> open ? (a.close||Infinity)-(b.close||Infinity) : (b.close||0)-(a.close||0));
+    const v=c.items.reduce((s,d)=>s+d.amount,0), w=c.items.reduce((s,d)=>s+d.amount*d.prob,0);
+    return `<div class="col"><div class="colhead"><b>${esc(c.l)}</b><span>${c.items.length} · ${moneyFull(v)}${open?` · wtd ${money(w)}`:""}</span></div>
+      ${c.items.length ? c.items.map(d=>`<a class="card" href="${esc(dealLink(d.id))}" target="_blank" rel="noopener">
+        <span class="dn">${esc(d.name)}</span>
+        <span class="meta"><span class="amt">${d.amount?moneyFull(d.amount):"No amount"}</span><span class="${open&&d.close&&d.close<today?"late":""}">${fmtD(d.close)}</span></span>
+        <span class="meta"><span>${esc(OWNERS[d.owner]||"Unassigned")}</span>${open?`<span>${pct(d.prob)}</span>`:""}</span></a>`).join("")
+      : `<div class="empty">No deals here.</div>`}</div>`;
+  }).join("");
+}
+
+/* ---------- prospecting ---------- */
+let lastRates = null;
+function renderProspecting(){
+  const since = state.since ? new Date(state.since+"T00:00:00") : null;
+  const cs = (state.contacts||[]).map(r=>({p:r.properties||{}})).filter(c=>ownerOk(c.p.hubspot_owner_id||null))
+    .filter(c=>!since || (c.p.createdate && new Date(c.p.createdate)>=since));
+  const n = {}; STATUSES.forEach(s=>n[s]=0); cs.forEach(c=>{ if(n[c.p.prospect_status]!=null) n[c.p.prospect_status]++; });
+  const approved=n["Approved"], proposal=n["Proposal Submitted"]+approved;
+  const meeting=n["Meeting Booked"]+n["Meeting Complete"]+proposal;
+  const responded=n["Response Received"]+meeting, denom=n["Declined"]+responded;
+  const cm = cs.filter(c=>c.p.prospect_status==="Contact Made");
+  const steps=Array(7).fill(0); let untouched=0;
+  cm.forEach(c=>{ const m=/Step (\d)/.exec(c.p.outreach_step||""); if(m) steps[+m[1]-1]++; else untouched++; });
+  const inSeq = steps.reduce((a,b)=>a+b,0);
+  const r = (a,b)=> b ? a/b : null;
+  const F = [
+    {name:"Outreach → Response", num:responded, den:denom, lo:.15, hi:.20, note:"5–10% is too low"},
+    {name:"Response → Meeting", num:meeting, den:responded, lo:.30},
+    {name:"Meeting → Proposal", num:proposal, den:meeting, lo:.33},
+    {name:"Proposal → Close", num:approved, den:proposal, lo:.50}];
+  F.forEach(f=>f.rate=r(f.num,f.den));
+  lastRates = F;
+
+  $("#pr-tiles").innerHTML = `
+    <div class="tile hero"><span class="lab">Response rate</span><span class="val">${pct(F[0].rate)}</span><span class="note">${responded} of ${denom} finished · target 15–20%</span></div>
+    <div class="tile"><span class="lab">Meetings</span><span class="val">${meeting}</span><span class="note">Booked or better</span></div>
+    <div class="tile"><span class="lab">Proposals out</span><span class="val">${proposal}</span><span class="note">${approved} approved</span></div>
+    <div class="tile"><span class="lab">Mid-sequence</span><span class="val">${inSeq}</span><span class="note">${untouched} more loaded but not yet emailed</span></div>`;
+
+  const verdict = f => {
+    if (f.rate==null) return `<span class="pill na">Pending</span> No contacts at this step yet.`;
+    const early = f.den<5 ? " Early read, small sample." : "";
+    if (f.hi && f.rate>f.hi) return `<span class="pill good">Above</span> Beating the ${pct(f.lo)}–${pct(f.hi)} target.${early}`;
+    if (f.rate>=f.lo) return `<span class="pill good">On target</span> At or above ${pct(f.lo)}.${early}`;
+    if (f.rate>=f.lo*0.7) return `<span class="pill warn">Close</span> ${pct(f.lo - f.rate)} short of target.${early}`;
+    return `<span class="pill bad">Below</span> ${pct(f.lo - f.rate)} short of target${f.note?` (${f.note})`:""}.${early}`;
+  };
+  $("#funnel").innerHTML = F.map(f=>{
+    const tgt = f.hi ? (f.lo+f.hi)/2 : f.lo, you = f.rate==null?0:Math.min(f.rate,1);
+    return `<div class="fstep">
+      <div class="fname">${esc(f.name)}<small>${f.num} of ${f.den}</small></div>
+      <div class="fviz">
+        <div class="fline"><span>OTT</span><span class="ftrack"><span class="you" style="width:${you*100}%"></span></span><span>${pct(f.rate)}</span></div>
+        <div class="fline"><span>Target</span><span class="ftrack">${f.hi?`<span class="tgt" style="width:${f.lo*100}%"></span><span class="band" style="left:${f.lo*100}%;width:${(f.hi-f.lo)*100}%"></span>`:`<span class="tgt" style="width:${tgt*100}%"></span>`}</span><span>${f.hi?`${pct(f.lo)}–${pct(f.hi)}`:"~"+pct(f.lo)}</span></div>
+      </div>
+      <div class="fverdict">${verdict(f)}</div></div>`;
+  }).join("");
+
+  $("#cad").innerHTML = CADENCE.map(([d,t],i)=>`<div class="day ${t==="Call"?"call":""}"><span class="d">${d}</span><span class="c">${steps[i]}</span><span class="t">${t}</span></div>`).join("");
+  $("#cad-sub").textContent = `${inSeq} Contact Made contacts by current step. Calls are shaded.`;
+
+  const rows = STATUSES.map(s=>[s,n[s]]);
+  $("#stat-table").innerHTML = `<thead><tr><th>Prospect status</th><th style="text-align:right">Contacts</th><th style="text-align:right">Share</th></tr></thead><tbody>`+
+    rows.map(([s,v])=>`<tr><td>${esc(s)}</td><td class="n">${v}</td><td class="n">${pct(cs.length?v/cs.length:null)}</td></tr>`).join("")+
+    `<tr><td><b>Total</b></td><td class="n"><b>${cs.length}</b></td><td class="n"></td></tr></tbody>`;
+  renderPlan();
+}
+function renderPlan(){
+  if (!lastRates) return;
+  const g = state.goal, bench = [.175,.30,.33,.50];
+  const used = lastRates.map((f,i)=> f.rate && f.den>=1 ? f.rate : bench[i]);
+  const filled = lastRates.map((f,i)=> !(f.rate && f.den>=1)).filter(Boolean).length;
+  const yours = Math.ceil(g / used.reduce((a,b)=>a*b,1));
+  $("#plan").innerHTML = `
+    <div><span class="big">${(g*90).toLocaleString()}</span><span class="lab">At Baylis's 900 per 10 deals</span></div>
+    <div><span class="big">${yours.toLocaleString()}</span><span class="lab">At OTT's current rates${filled?` (benchmark used for ${filled} step${filled>1?"s":""} with no data)`:""}</span></div>`;
+}
+
+load();
+})();
+</script>
+
+</body>
+</html>
