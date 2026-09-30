@@ -354,15 +354,15 @@ function render(){
   if (state.contacts) renderProspecting();
 }
 function renderYears(){
-  const ys = new Set([YEAR]); deals().forEach(d=>{ if(d.stage==="closedwon"&&d.close) ys.add(d.close.getFullYear()); });
+  const ys = new Set([YEAR]); deals().forEach(d=>{ if(d.stage==="closedwon"&&d.close) ys.add(d.close.getUTCFullYear()); });
   const sel=$("#year"), list=[...ys].sort((a,b)=>b-a);
   sel.innerHTML = list.map(y=>`<option value="${y}">${y}</option>`).join(""); sel.value = state.year;
 }
 function renderOverview(){
   const ds = deals(), y = state.year;
-  const won = ds.filter(d=>d.stage==="closedwon" && d.close && d.close.getFullYear()===y);
-  const lost = ds.filter(d=>d.stage==="closedlost" && d.close && d.close.getFullYear()===y);
-  const wonQ = won.filter(d=>Math.floor(d.close.getMonth()/3)===QTR && y===YEAR);
+  const won = ds.filter(d=>d.stage==="closedwon" && d.close && d.close.getUTCFullYear()===y);
+  const lost = ds.filter(d=>d.stage==="closedlost" && d.close && d.close.getUTCFullYear()===y);
+  const wonQ = won.filter(d=>Math.floor(d.close.getUTCMonth()/3)===QTR && y===YEAR);
   const sum = a => a.reduce((s,d)=>s+d.amount,0);
   const open = ds.filter(d=>d.stage!=="closedwon" && d.stage!=="closedlost");
   const openSel = open.filter(d=>state.stages.has(d.stage));
@@ -376,7 +376,7 @@ function renderOverview(){
     <div class="tile"><span class="lab">Open pipeline${filtered?" · filtered":""}</span><span class="val">${moneyFull(sum(openSel))}</span><span class="note">${openSel.length} open deal${openSel.length===1?"":"s"}${filtered?` in ${state.stages.size} of ${OPEN_STAGES.length} stages`:" across all stages"}</span></div>
     <div class="tile"><span class="lab">Weighted pipeline</span><span class="val">${moneyFull(wsum)}</span><span class="note">Value × HubSpot stage probability</span></div>`;
   // months
-  const byM = Array(12).fill(0); won.forEach(d=>byM[d.close.getMonth()]+=d.amount);
+  const byM = Array(12).fill(0); won.forEach(d=>byM[d.close.getUTCMonth()]+=d.amount);
   const max = Math.max(...byM, 1);
   const inQ = m => y===YEAR && Math.floor(m/3)===QTR;
   $("#months").innerHTML = byM.map((v,m)=>`<div class="mcol ${inQ(m)?"q":""}" title="${moneyFull(v)}"><span class="mval">${v?money(v):""}</span><div class="mbar" style="height:${v?Math.max(2,v/max*100*0.82):0}%"></div></div>`).join("");
@@ -396,14 +396,14 @@ function renderOverview(){
 }
 function renderBoard(){
   const ds = deals(), today = new Date(); today.setHours(0,0,0,0);
-  const inRange = d => d.close && (state.closedRange==="year" ? d.close.getFullYear()===YEAR
-    : d.close.getFullYear()===YEAR && Math.floor(d.close.getMonth()/3)===QTR);
+  const inRange = d => d.close && (state.closedRange==="year" ? d.close.getUTCFullYear()===YEAR
+    : d.close.getUTCFullYear()===YEAR && Math.floor(d.close.getUTCMonth()/3)===QTR);
   const cols = OPEN_STAGES.map(([k,l])=>({k,l,items:ds.filter(d=>d.stage===k)}));
   if (state.closedRange!=="none"){
     cols.push({k:"closedwon",l:"Closed Won",items:ds.filter(d=>d.stage==="closedwon"&&inRange(d))});
     cols.push({k:"closedlost",l:"Closed Lost",items:ds.filter(d=>d.stage==="closedlost"&&inRange(d))});
   }
-  const fmtD = d => d ? d.toLocaleDateString([], {month:"short",day:"numeric",year: d.getFullYear()!==YEAR?"2-digit":undefined}) : "No date";
+  const fmtD = d => d ? d.toLocaleDateString([], {timeZone:"UTC",month:"short",day:"numeric",year: d.getUTCFullYear()!==YEAR?"2-digit":undefined}) : "No date";
   $("#board").innerHTML = cols.map(c=>{
     const open = !c.k.startsWith("closed");
     c.items.sort((a,b)=> open ? (a.close||Infinity)-(b.close||Infinity) : (b.close||0)-(a.close||0));
