@@ -52,6 +52,8 @@ button{font:inherit;cursor:pointer}
 .btn:hover{border-color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .fresh{font:12px var(--mono);color:var(--faint)}
+a.btn{text-decoration:none;display:inline-block}
+.fresh.wait{color:var(--accent)}
 nav{display:flex;gap:4px;margin-top:14px;overflow-x:auto}
 nav button{border:0;background:none;color:var(--muted);padding:10px 14px;font-weight:500;font-size:14px;border-bottom:2px solid transparent;white-space:nowrap}
 nav button[aria-selected=true]{color:var(--fg);border-bottom-color:var(--accent)}
@@ -168,7 +170,7 @@ ul.rules b{color:var(--fg);font-weight:500}
           <option value="89384081">OTT shared</option>
         </select>
       </label>
-      <button class="btn" id="refresh" type="button">Reload</button>
+      <a class="btn" id="sync" href="https://github.com/gabrielgalarza/p-9mhqmkl8j3/actions/workflows/sync.yml" target="_blank" rel="noopener">Sync from HubSpot</a>
       <span class="fresh" id="fresh">Loading…</span>
     </div>
   </div>
@@ -311,7 +313,22 @@ $("#year").addEventListener("change", e=>{ state.year=+e.target.value; render();
 $("#closedrange").addEventListener("change", e=>{ state.closedRange=e.target.value; store.set("ott.closed",state.closedRange); render(); });
 $("#since").addEventListener("change", e=>{ state.since=e.target.value; store.set("ott.since",state.since); render(); });
 $("#goal").addEventListener("input", e=>{ state.goal=Math.max(1,+e.target.value||1); store.set("ott.goal",state.goal); renderPlan(); });
-$("#refresh").addEventListener("click", ()=>load());
+// Sync opens the GitHub workflow (Run workflow button), then this page
+// watches for a newer data.json and reloads itself when it lands.
+let syncTimer = null;
+$("#sync").addEventListener("click", ()=>{
+  const before = state.storedAt || 0, started = Date.now();
+  clearInterval(syncTimer);
+  const f = $("#fresh"); f.classList.add("wait");
+  f.textContent = "On GitHub, click Run workflow. New numbers show here in 1–2 min.";
+  syncTimer = setInterval(async ()=>{
+    try {
+      const d = await (await fetch("data.json?t=" + Date.now(), {cache:"no-store"})).json();
+      if (Date.parse(d.generatedAt) > before){ clearInterval(syncTimer); f.classList.remove("wait"); await load(); }
+    } catch {}
+    if (Date.now() - started > 8*60*1000){ clearInterval(syncTimer); f.classList.remove("wait"); await load(); }
+  }, 15000);
+});
 
 const ownerOk = id => state.owner==="all" ? true
   : state.owner==="gab" ? (id==="162912451"||id==="89384081") : id===state.owner;
