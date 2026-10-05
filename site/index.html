@@ -74,13 +74,23 @@ h2{font:600 18px/1.2 var(--display);margin:0 0 4px}
 .chip[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--fg)}
 /* monthly bars */
 .months{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;align-items:end;height:170px;margin-top:14px;border-bottom:1px solid var(--line)}
-.mcol{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:4px;min-width:0}
+.mcol{border:0;background:none;padding:0;font:inherit;cursor:pointer;border-radius:4px 4px 0 0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:4px;min-width:0}
 .mbar{width:100%;max-width:34px;background:var(--line);border-radius:4px 4px 0 0;min-height:1px}
 .mcol.q .mbar{background:var(--accent)}
 .mval{font:10px var(--mono);color:var(--muted);white-space:nowrap}
 .mlabels{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;margin-top:6px}
 .mlabels span{font:11px var(--mono);color:var(--faint);text-align:center}
 .mlabels span.q{color:var(--accent);font-weight:500}
+.mcol:hover .mbar{filter:brightness(1.15)}
+.mcol.sel .mbar{outline:2px solid var(--fg);outline-offset:1px}
+.mlabels span.sel{color:var(--fg);font-weight:600}
+.month-deals{margin-top:16px;border-top:1px solid var(--line);padding-top:14px;display:grid;gap:8px}
+.mdhead{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
+.mdhead b{font:600 15px var(--display)}
+.mdhead span{font:12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.mdhead .btn{margin-left:auto;padding:3px 10px;font-size:12px}
+.month-deals a{color:var(--fg);text-decoration:none}
+.month-deals a:hover{text-decoration:underline}
 /* stage bars */
 .sbars{display:grid;gap:10px;margin-top:14px}
 .srow{display:grid;grid-template-columns:minmax(120px,170px) 1fr auto;gap:12px;align-items:center;font-size:13px;border:0;background:none;color:var(--fg);text-align:left;padding:2px 0;border-radius:6px}
@@ -201,6 +211,7 @@ ul.rules b{color:var(--fg);font-weight:500}
       <p class="sub" id="months-sub">Current quarter highlighted.</p>
       <div class="months" id="months"></div>
       <div class="mlabels" id="mlabels"></div>
+      <div class="month-deals" id="month-deals" hidden></div>
     </div>
     <div class="panel">
       <h2>Open pipeline by stage</h2>
@@ -296,7 +307,7 @@ let state = { deals:null, contacts:null, dealErr:null, contactErr:null, storedAt
   owner: store.get("ott.owner","all"), year: YEAR,
   stages: new Set(OPEN_STAGES.map(s=>s[0])), closedRange: store.get("ott.closed","quarter"),
   since: store.get("ott.since",""), goal: +store.get("ott.goal","10") || 10,
-  portalId:null };
+  portalId:null, month:null };
 
 /* ---------- controls ---------- */
 $("#owner").value = state.owner;
@@ -309,7 +320,7 @@ function setTab(t){ if(!["overview","pipeline","prospecting"].includes(t)) t="ov
 document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
 setTab(state.tab);
 $("#owner").addEventListener("change", e=>{ state.owner=e.target.value; store.set("ott.owner",state.owner); render(); });
-$("#year").addEventListener("change", e=>{ state.year=+e.target.value; render(); });
+$("#year").addEventListener("change", e=>{ state.year=+e.target.value; state.month=null; render(); });
 $("#closedrange").addEventListener("change", e=>{ state.closedRange=e.target.value; store.set("ott.closed",state.closedRange); render(); });
 $("#since").addEventListener("change", e=>{ state.since=e.target.value; store.set("ott.since",state.since); render(); });
 $("#goal").addEventListener("input", e=>{ state.goal=Math.max(1,+e.target.value||1); store.set("ott.goal",state.goal); renderPlan(); });
@@ -396,9 +407,24 @@ function renderOverview(){
   const byM = Array(12).fill(0); won.forEach(d=>byM[d.close.getUTCMonth()]+=d.amount);
   const max = Math.max(...byM, 1);
   const inQ = m => y===YEAR && Math.floor(m/3)===QTR;
-  $("#months").innerHTML = byM.map((v,m)=>`<div class="mcol ${inQ(m)?"q":""}" title="${moneyFull(v)}"><span class="mval">${v?money(v):""}</span><div class="mbar" style="height:${v?Math.max(2,v/max*100*0.82):0}%"></div></div>`).join("");
-  $("#mlabels").innerHTML = "JFMAMJJASOND".split("").map((l,m)=>`<span class="${inQ(m)?"q":""}">${l}</span>`).join("");
-  $("#months-sub").textContent = y===YEAR ? `${qName} highlighted.` : `All of ${y}.`;
+  const MN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const sel = state.month;
+  $("#months").innerHTML = byM.map((v,m)=>`<button type="button" class="mcol ${inQ(m)?"q":""} ${sel===m?"sel":""}" data-m="${m}" aria-pressed="${sel===m}" aria-label="${MN[m]}: ${moneyFull(v)}"><span class="mval">${v?money(v):""}</span><span class="mbar" style="height:${v?Math.max(2,v/max*100*0.82):0}%"></span></button>`).join("");
+  $("#mlabels").innerHTML = "JFMAMJJASOND".split("").map((l,m)=>`<span class="${inQ(m)?"q":""} ${sel===m?"sel":""}">${l}</span>`).join("");
+  $("#months-sub").textContent = (y===YEAR ? `${qName} highlighted.` : `All of ${y}.`) + " Click a month to see its deals.";
+  $("#months").querySelectorAll(".mcol").forEach(b=>b.addEventListener("click",()=>{
+    const m = +b.dataset.m; state.month = state.month===m ? null : m; renderOverview(); }));
+  const md = $("#month-deals");
+  if (sel == null) md.hidden = true;
+  else {
+    const list = won.filter(d=>d.close.getUTCMonth()===sel).sort((a,b)=>b.amount-a.amount);
+    md.hidden = false;
+    md.innerHTML = `<div class="mdhead"><b>${MN[sel]} ${y}</b><span>${list.length} deal${list.length===1?"":"s"} · ${moneyFull(sum(list))}</span><button type="button" class="btn" id="md-close">Close</button></div>` +
+      (list.length ? `<div class="tblwrap"><table><thead><tr><th>Deal</th><th>Owner</th><th>Closed</th><th style="text-align:right">Amount</th></tr></thead><tbody>` +
+        list.map(d=>`<tr><td><a href="${esc(dealLink(d.id))}" target="_blank" rel="noopener">${esc(d.name)}</a></td><td>${esc(OWNERS[d.owner]||"Unassigned")}</td><td>${d.close.toLocaleDateString([], {timeZone:"UTC",month:"short",day:"numeric"})}</td><td class="n">${d.amount?moneyFull(d.amount):"—"}</td></tr>`).join("") +
+        `</tbody></table></div>` : `<p class="empty">No deals closed won in ${MN[sel]}.</p>`);
+    $("#md-close").addEventListener("click",()=>{ state.month=null; renderOverview(); });
+  }
   // stage bars
   const st = OPEN_STAGES.map(([k,l])=>{ const a=open.filter(d=>d.stage===k); return {k,l,n:a.length,v:sum(a),w:a.reduce((s,d)=>s+d.amount*d.prob,0)}; });
   const smax = Math.max(...st.map(s=>s.v),1);
